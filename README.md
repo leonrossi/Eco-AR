@@ -2,7 +2,7 @@
 
 Author: Leonardo Rossi Luiz - ICMC-USP.
 
-Advisor: Maria Cristina Ferreira de Oliveira - ICMC/USP.
+Advisor: Maria Cristina Ferreira de Oliveira - ICMC-USP.
 
 Eco-AR is a project for ecological events visualization and audio retrieval that provides an easy interface for who wants to explore more the Soundcape area and understand acoustic events.
 
