@@ -1,67 +1,36 @@
-# The MIT License (MIT)
-# Copyright (c) 2014 Thomas Burette
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-#
-"""M-tree datastructure to perform k-NN searches
+"""M-tree data structure to perform k-NN searches
 ===
-This is an implementation of the M-tree, a data structure to find the element(s) the most similar to a given one.
-
+This is an implementation of the M-tree, a data structure to find the element(s) the most similar to a given element.
 The M-tree is a tree based implementation of the concept of metric space
 ( http://en.wikipedia.org/wiki/Metric_space ), it is similar to b-tree.
-
 Implementation based on the paper
 'M-tree: An Efficient Access Method for Similarity Search in Metric Spaces'
-
 To use the M-tree you only need to pass two things to it:
-
 - a set of objects to store.
 - a distance function `d(x, y)` that returns a number establishing
 how similar two objects are.
-
 Usage:
 ======
     >>> def d_int(x, y):      # define a distance function for numbers
     ...     return abs(x - y)
     ...
     >>> tree = MTree(d_int, max_node_size=4)   # create an empty M-tree
-    >>> tree.add(1)           # add objects 1, 5 and 9 to the tree
-    >>> tree.add_all([5, 9])
+    >>> tree.add(1)           # add object 1 to the tree
+    >>> tree.add_all([5, 9])  # add objects 5 and 9
     >>> tree.search(10)       # search the object closest to 10. Will return 9
     >>> [9]
     >>> tree.search(9, 2)     # search the two objects closest to 9.
     >>> [5, 9]
-
 The size of nodes (optional argument `max_node_size`) has a large influence on 
 the number of calls of the distance function (`d`).
-
 The objects you insert in the tree can be anything as long as the
-distance function you provide is able to handle them corretly.
-
+distance function you provide is able to handle them correctly.
 The distance function (`d`) must be provided when the tree is created.
-It takes as a parameter two objects and return an number telling how
+It takes as a parameter two objects and return a number telling how
 similar the two objects are. The smaller the number, the more similar the
 objects are. The number returned can be an integer, float,... Technically
-anything that behaves like a number (<, <=, >,... work like numbers).
-
+anything that behaves like a number (<, <=, >,...).
 The distance function MUST respect the following properties:
-
 - d always return the same value given the same parameters
 - Non negativity: forall x, y: d(x, y) >= 0
   d must never return a negative value. If the value your function returns
@@ -77,30 +46,25 @@ The distance function MUST respect the following properties:
   the distance from one point to an intermediary + the distance from the
   intermediary to the second point.
   Here is an analogy to help understand this property. Imagine a road
-  going directlty between two towns. It never turns, it is a perfectly
+  going directly between two towns. It never turns, it is a perfectly
   straight line. This is obviously the shortest way to get between the two
   town. Now imagine we pick a position anywhere we want. If we go from
   one town to the other by passing trough this position, it is impossible to
   have travelled less than by following the straight road.
-
 If the distance function violates one of these rule, the M-tree may
 return erroneous results. 
-
 If the same object is inserted multiple times, it will be considered as
 different object by the tree.
-
 This implementation is memory only. The tree is not stored on disk.
 This may be a problem if the objects you store are large (pictures, sound,...)
-Altough the tree itself resides in memory you can store the objects it contains on disk (or online,...). For example the objects you pass to the tree could
+Although the tree itself resides in memory you can store the objects it contains on disk (or online,...). For example the objects you pass to the tree could
 be path to files; the d function would load the files from disk to perform the
 comparisons.
-
 To maintain good performance while minimizing memory usage, a good trade-off
 is to store in the objects only the path to the actual data as well as the key
 features that define the data. The distance function (d) can then compare
 the objects using the features without the need for disk access
 That way, searches are fast (no disk access) while keeping data on disk.
-
 """
 
 __all__ = ['MTree', 'M_LB_DIST_confirmed', 'M_LB_DIST_non_confirmed',
@@ -116,7 +80,6 @@ from itertools import combinations, islice
 
 def M_LB_DIST_confirmed(entries, current_routing_entry, d):
     """Promotion algorithm. Maximum Lower Bound on DISTance. Confirmed.
-
     Return the object that is the furthest apart from current_routing_entry 
     using only precomputed distances stored in the entries.
     
@@ -144,7 +107,6 @@ def M_LB_DIST_confirmed(entries, current_routing_entry, d):
 
 def M_LB_DIST_non_confirmed(entries, unused_current_routing_entry, d):
     """Promotion algorithm. Maximum Lower Bound on DISTance. Non confirmed.
-
     Compares all pair of objects (in entries) and select the two who are
     the furthest apart.
     """
@@ -155,10 +117,8 @@ def M_LB_DIST_non_confirmed(entries, unused_current_routing_entry, d):
 #all the elements are in one set and the other set is empty.
 def generalized_hyperplane(entries, routing_object1, routing_object2, d):
     """Partition algorithm.
-
     Each entry is assigned to the routing_object to which it is the closest.
     This is an unbalanced partition strategy.
-
     Return a tuple of two elements. The first one is the set of entries
     assigned to the routing_object1 while the second is the set of entries
     assigned to the routing_object2"""
@@ -185,7 +145,6 @@ class MTree(object):
                  partition=generalized_hyperplane):
         """
         Create a new MTree.
-
         Arguments:
         d: distance function.
         max_node_size: optional. Maximum number of entries in a node of
@@ -241,7 +200,6 @@ class MTree(object):
 
     def search(self, query_obj, k=1):
         """Return the k objects the most similar to query_obj.
-
         Implementation of the k-Nearest Neighbor algorithm.
         Returns a list of the k closest elements to query_obj, ordered by
         distance to query_obj (from closest to furthest).
@@ -259,7 +217,14 @@ class MTree(object):
 
         while pr:
             prEntry = heappop(pr)
-            if(prEntry.dmin > nn.search_radius()):
+
+            # print("***************************")
+            # print(f"RADIUS: ",nn.dmax)
+            # print(nn)
+            # print(pr)
+            # print("***************************")
+
+            if(prEntry.dmin > nn.dmax):
                 #best candidate is too far, we won't have better a answer
                 #we can stop
                 break
@@ -286,12 +251,11 @@ class NN(object):
     def search_radius(self):
         """The search radius of the knn search algorithm.
         aka dmax
-
         The search radius is dynamic."""
         return self.dmax
 
     def update(self, obj, dmax):
-        if obj == None:
+        if obj is None:
             #internal node
             self.dmax = min(self.dmax, dmax)
             return
@@ -315,7 +279,6 @@ class PrEntry(object):
     def __init__(self, tree, dmin, d_query):
         """
         Constructor.
-
         arguments:
         d_query: distance d to searched query object
         """
@@ -335,12 +298,9 @@ class Entry(object):
     
     The leafs and internal nodes of the M-tree contain a list of instances of
     this class.
-
     The distance to the parent is None if the node in which this entry is
     stored has no parent.
-
     radius and subtree are None if the entry is contained in a leaf.
-
     Used in set and dict even tough eq and hash haven't been redefined
     """
     def __init__(self,
@@ -363,9 +323,7 @@ class Entry(object):
 
 class AbstractNode(object):
     """An abstract leaf of the M-tree.
-
     Concrete class are LeafNode and InternalNode
-
     We need to keep a reference to mtree so that we can know if a given node
     is root as well as update the root.
     
@@ -426,14 +384,12 @@ class AbstractNode(object):
 
     def remove_entry(self, entry):
         """Removes the entry from this node
-
         Raise KeyError if the entry is not in this node
         """
         self.entries.remove(entry)
 
     def add_entry(self, entry):
         """Add an entry to this node.
-
         Raise ValueError if the node is full.
         """
         if self.is_full():
@@ -626,7 +582,6 @@ class InternalNode(AbstractNode):
 def split(existing_node, entry, d):
     """
     Split existing_node into two nodes.
-
     Adding entry to existing_node causes an overflow. Therefore we
     split existing_node into two nodes.
     
